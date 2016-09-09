@@ -162,9 +162,8 @@ public class OBJ : MonoBehaviour
 		{
 			l = l.Trim();
 			if (l.IndexOf("#") != -1)
-			{ // comment line
 				continue;
-			}
+
 			string[] p = regexWhitespaces.Split(l);
 			switch (p[0])
 			{
@@ -175,14 +174,13 @@ public class OBJ : MonoBehaviour
 				case G:
 					string groupName = null;
 					if (p.Length >= 2)
-					{
 						groupName = p[1].Trim();
-					}
+
 					isFirstInGroup = true;
 					buffer.PushGroup(groupName);
 					break;
 				case V:
-					buffer.PushVertex(new Vector3(cf(p[1]), cf(p[2]), cf(p[3])));
+					buffer.PushVertex(new Vector3(cf(p[1]) * -1, cf(p[2]), cf(p[3])));
 					break;
 				case VT:
 					buffer.PushUV(new Vector2(cf(p[1]), cf(p[2])));
@@ -201,18 +199,26 @@ public class OBJ : MonoBehaviour
 					GetFaceIndicesByOneFaceLine(faces, p, isFaceIndexPlus);
 					if (p.Length == 4)
 					{
-						buffer.PushFace(faces[0]);
-						buffer.PushFace(faces[1]);
 						buffer.PushFace(faces[2]);
+						buffer.PushFace(faces[1]);
+						buffer.PushFace(faces[0]);
 					}
 					else if (p.Length == 5)
 					{
+						/*
 						buffer.PushFace(faces[0]);
 						buffer.PushFace(faces[1]);
 						buffer.PushFace(faces[3]);
 						buffer.PushFace(faces[3]);
 						buffer.PushFace(faces[1]);
 						buffer.PushFace(faces[2]);
+						*/
+						buffer.PushFace(faces[2]);
+						buffer.PushFace(faces[1]);
+						buffer.PushFace(faces[3]);
+						buffer.PushFace(faces[3]);
+						buffer.PushFace(faces[1]);
+						buffer.PushFace(faces[0]);
 					}
 					else {
 						Debug.LogWarning("face vertex count :" + (p.Length - 1) + " larger than 4:");
@@ -226,8 +232,6 @@ public class OBJ : MonoBehaviour
 					break;
 			}
 		}
-
-		// buffer.Trace();
 	}
 
 	private float cf(string v)
@@ -238,7 +242,7 @@ public class OBJ : MonoBehaviour
 		}
 		catch (Exception e)
 		{
-			print(e);
+			Debug.Log(e);
 			return 0;
 		}
 	}
@@ -487,9 +491,8 @@ public class OBJ : MonoBehaviour
 				materials.Add(md.name, GetMaterial(md));
 			}
 		}
-		else {
+		else
 			materials.Add("default", new Material(Shader.Find("VertexLit")));
-		}
 
 		GameObject[] ms = new GameObject[buffer.numObjects];
 
@@ -504,6 +507,7 @@ public class OBJ : MonoBehaviour
 			for (int i = 0; i < buffer.numObjects; i++)
 			{
 				GameObject go = new GameObject();
+				// go.transform.localScale = new Vector3(-1, 1, 1);
 				go.transform.parent = gameObject.transform;
 				go.AddComponent(typeof(MeshFilter));
 				go.AddComponent(typeof(MeshRenderer));
