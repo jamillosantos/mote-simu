@@ -54,59 +54,38 @@ public class OBJ : MonoBehaviour
 	{
 		SetGeometryData(filePath);
 
-		/*
-		if(hasMaterials) {
-			loader = new WWW(basepath + mtllib);
-			Debug.Log("base path = "+basepath);
-			Debug.Log("MTL path = "+(basepath + mtllib));
-			yield return loader;
-			if (loader.error != null) {
-				Debug.LogError(loader.error);
-			}
-			else {
-				SetMaterialData(loader.text);
-			}
-			
-			foreach(MaterialData m in materialData) {
-				if(m.diffuseTexPath != null) {
-					WWW texloader = GetTextureLoader(m, m.diffuseTexPath);
-					yield return texloader;
-					if (texloader.error != null) {
-						Debug.LogError(texloader.error);
-					} else {
-						m.diffuseTex = texloader.texture;
-					}
+		if (hasMaterials)
+		{
+			Debug.Log("base path = " + this.basepath);
+			Debug.Log("MTL path = " + Path.Combine(this.basepath, this.mtllib));
+
+			SetMaterialData(Path.Combine(this.basepath, this.mtllib));
+
+			foreach (MaterialData m in materialData)
+			{
+				if (m.diffuseTexPath != null)
+				{
+					byte[] texbytes = GetTextureLoader(m, Path.Combine(this.basepath, m.diffuseTexPath));
+					Texture2D tex = new Texture2D(1, 1);
+					tex.LoadImage(texbytes);
+					m.diffuseTex = tex;
 				}
-				if(m.bumpTexPath != null) {
-					WWW texloader = GetTextureLoader(m, m.bumpTexPath);
-					yield return texloader;
-					if (texloader.error != null) {
-						Debug.LogError(texloader.error);
-					} else {
-						m.bumpTex = texloader.texture;
-					}
+				if (m.bumpTexPath != null)
+				{
+					byte[] texbytes = GetTextureLoader(m, Path.Combine(this.basepath, m.bumpTexPath));
+					Texture2D tex = new Texture2D(1, 1);
+					tex.LoadImage(texbytes);
+					m.bumpTex = tex;
 				}
 			}
 		}
-		*/
-
 		Build();
-
 	}
 
-	private WWW GetTextureLoader(MaterialData m, string texpath)
+	private byte[] GetTextureLoader(MaterialData m, string texpath)
 	{
-		char[] separators = { '/', '\\' };
-		string[] components = texpath.Split(separators);
-		string filename = components[components.Length - 1];
-		string ext = Path.GetExtension(filename).ToLower();
-		if (ext != ".png" && ext != ".jpg")
-		{
-			Debug.LogWarning("maybe unsupported texture format:" + ext);
-		}
-		WWW texloader = new WWW(basepath + filename);
-		Debug.Log("texture path for material(" + m.name + ") = " + (basepath + filename));
-		return texloader;
+		Debug.Log("Loading texture " + texpath);
+		return File.ReadAllBytes(texpath);
 	}
 
 	private void GetFaceIndicesByOneFaceLine(FaceIndices[] faces, string[] p, bool isFaceIndexPlus)
@@ -170,6 +149,8 @@ public class OBJ : MonoBehaviour
 
 	private void SetGeometryData(string filePath)
 	{
+		this.basepath = Path.GetDirectoryName(filePath);
+
 		Stream fileStream = new FileStream(filePath, FileMode.Open);
 		StreamReader streamReader = new StreamReader(fileStream);
 
@@ -179,6 +160,7 @@ public class OBJ : MonoBehaviour
 		int i = 0;
 		for (string l = streamReader.ReadLine(); l != null; l = streamReader.ReadLine(), i++)
 		{
+			l = l.Trim();
 			if (l.IndexOf("#") != -1)
 			{ // comment line
 				continue;
@@ -299,21 +281,25 @@ public class OBJ : MonoBehaviour
 		public Texture2D bumpTex;
 	}
 
-	private void SetMaterialData(string data)
+	private void SetMaterialData(string filePath)
 	{
-		string[] lines = data.Split("\n".ToCharArray());
+
+		Stream fileStream = new FileStream(filePath, FileMode.Open);
+		StreamReader streamReader = new StreamReader(fileStream);
 
 		materialData = new List<MaterialData>();
 		MaterialData current = new MaterialData();
 		Regex regexWhitespaces = new Regex(@"\s+");
 
-		for (int i = 0; i < lines.Length; i++)
+		int i = 0;
+		for (string l = streamReader.ReadLine(); l != null; l = streamReader.ReadLine(), i++)
 		{
-			string l = lines[i].Trim();
-
-			if (l.IndexOf("#") != -1) l = l.Substring(0, l.IndexOf("#"));
+			l = l.Trim();
+			if (l.IndexOf("#") != -1)
+				l = l.Substring(0, l.IndexOf("#"));
 			string[] p = regexWhitespaces.Split(l);
-			if (p[0].Trim() == "") continue;
+			if (p[0].Trim() == "")
+				continue;
 
 			switch (p[0])
 			{
