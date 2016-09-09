@@ -12,7 +12,7 @@ using System.IO;
 public class OBJ : MonoBehaviour
 {
 
-	public string objPath;
+	public string ObjPath;
 
 	/* OBJ file tags */
 	private const string O = "o";
@@ -42,49 +42,45 @@ public class OBJ : MonoBehaviour
 
 	private string basepath;
 	private string mtllib;
-	private GeometryBuffer buffer;
+	private GeometryBuffer _buffer;
 
 	void Start()
 	{
-		buffer = new GeometryBuffer();
-		Load(this.objPath);
+		this._buffer = new GeometryBuffer();
+		this.Load(this.ObjPath);
 	}
 
 	public void Load(string filePath)
 	{
-		SetGeometryData(filePath);
+		this.SetGeometryData(filePath);
 
-		if (hasMaterials)
+		if (this._hasMaterials)
 		{
-			Debug.Log("base path = " + this.basepath);
-			Debug.Log("MTL path = " + Path.Combine(this.basepath, this.mtllib));
+			this.SetMaterialData(Path.Combine(this.basepath, this.mtllib));
 
-			SetMaterialData(Path.Combine(this.basepath, this.mtllib));
-
-			foreach (MaterialData m in materialData)
+			foreach (MaterialData m in _materialData)
 			{
-				if (m.diffuseTexPath != null)
+				if (m.DiffuseTexPath != null)
 				{
-					byte[] texbytes = GetTextureLoader(m, Path.Combine(this.basepath, m.diffuseTexPath));
+					byte[] texbytes = GetTextureLoader(m, Path.Combine(this.basepath, m.DiffuseTexPath));
 					Texture2D tex = new Texture2D(1, 1);
 					tex.LoadImage(texbytes);
-					m.diffuseTex = tex;
+					m.DiffuseTex = tex;
 				}
-				if (m.bumpTexPath != null)
+				if (m.BumpTexPath != null)
 				{
-					byte[] texbytes = GetTextureLoader(m, Path.Combine(this.basepath, m.bumpTexPath));
+					byte[] texbytes = GetTextureLoader(m, Path.Combine(this.basepath, m.BumpTexPath));
 					Texture2D tex = new Texture2D(1, 1);
 					tex.LoadImage(texbytes);
-					m.bumpTex = tex;
+					m.BumpTex = tex;
 				}
 			}
 		}
-		Build();
+		this.Build();
 	}
 
 	private byte[] GetTextureLoader(MaterialData m, string texpath)
 	{
-		Debug.Log("Loading texture " + texpath);
 		return File.ReadAllBytes(texpath);
 	}
 
@@ -118,8 +114,8 @@ public class OBJ : MonoBehaviour
 			}
 		}
 		else { // for minus index
-			int vertexCount = buffer.vertices.Count;
-			int uvCount = buffer.uvs.Count;
+			int vertexCount = _buffer._vertices.Count;
+			int uvCount = _buffer._uvs.Count;
 			for (int j = 1; j < p.Length; j++)
 			{
 				string[] c = p[j].Trim().Split("/".ToCharArray());
@@ -168,7 +164,7 @@ public class OBJ : MonoBehaviour
 			switch (p[0])
 			{
 				case O:
-					buffer.PushObject(p[1].Trim());
+					this._buffer.PushObject(p[1].Trim());
 					isFirstInGroup = true;
 					break;
 				case G:
@@ -177,16 +173,16 @@ public class OBJ : MonoBehaviour
 						groupName = p[1].Trim();
 
 					isFirstInGroup = true;
-					buffer.PushGroup(groupName);
+					this._buffer.PushGroup(groupName);
 					break;
 				case V:
-					buffer.PushVertex(new Vector3(cf(p[1]) * -1, cf(p[2]), cf(p[3])));
+					this._buffer.PushVertex(new Vector3(cf(p[1]) * -1, cf(p[2]), cf(p[3])));
 					break;
 				case VT:
-					buffer.PushUV(new Vector2(cf(p[1]), cf(p[2])));
+					this._buffer.PushUV(new Vector2(cf(p[1]), cf(p[2])));
 					break;
 				case VN:
-					buffer.PushNormal(new Vector3(cf(p[1]), cf(p[2]), cf(p[3])));
+					this._buffer.PushNormal(new Vector3(cf(p[1]), cf(p[2]), cf(p[3])));
 					break;
 				case F:
 					FaceIndices[] faces = new FaceIndices[p.Length - 1];
@@ -196,31 +192,24 @@ public class OBJ : MonoBehaviour
 						string[] c = p[1].Trim().Split("/".ToCharArray());
 						isFaceIndexPlus = (ci(c[0]) >= 0);
 					}
-					GetFaceIndicesByOneFaceLine(faces, p, isFaceIndexPlus);
+					this.GetFaceIndicesByOneFaceLine(faces, p, isFaceIndexPlus);
 					if (p.Length == 4)
 					{
-						buffer.PushFace(faces[2]);
-						buffer.PushFace(faces[1]);
-						buffer.PushFace(faces[0]);
+						this._buffer.PushFace(faces[2]);
+						this._buffer.PushFace(faces[1]);
+						this._buffer.PushFace(faces[0]);
 					}
 					else if (p.Length == 5)
 					{
-						/*
-						buffer.PushFace(faces[0]);
-						buffer.PushFace(faces[1]);
-						buffer.PushFace(faces[3]);
-						buffer.PushFace(faces[3]);
-						buffer.PushFace(faces[1]);
-						buffer.PushFace(faces[2]);
-						*/
-						buffer.PushFace(faces[2]);
-						buffer.PushFace(faces[1]);
-						buffer.PushFace(faces[3]);
-						buffer.PushFace(faces[3]);
-						buffer.PushFace(faces[1]);
-						buffer.PushFace(faces[0]);
+						this._buffer.PushFace(faces[2]);
+						this._buffer.PushFace(faces[1]);
+						this._buffer.PushFace(faces[3]);
+						this._buffer.PushFace(faces[3]);
+						this._buffer.PushFace(faces[1]);
+						this._buffer.PushFace(faces[0]);
 					}
-					else {
+					else
+					{
 						Debug.LogWarning("face vertex count :" + (p.Length - 1) + " larger than 4:");
 					}
 					break;
@@ -228,7 +217,7 @@ public class OBJ : MonoBehaviour
 					mtllib = l.Substring(p[0].Length + 1).Trim();
 					break;
 				case UML:
-					buffer.PushMaterialName(p[1].Trim());
+					_buffer.PushMaterialName(p[1].Trim());
 					break;
 			}
 		}
@@ -260,7 +249,7 @@ public class OBJ : MonoBehaviour
 		}
 	}
 
-	private bool hasMaterials
+	private bool _hasMaterials
 	{
 		get
 		{
@@ -269,20 +258,21 @@ public class OBJ : MonoBehaviour
 	}
 
 	/* ############## MATERIALS */
-	private List<MaterialData> materialData;
+	private List<MaterialData> _materialData;
+
 	private class MaterialData
 	{
-		public string name;
-		public Color ambient;
-		public Color diffuse;
-		public Color specular;
-		public float shininess;
-		public float alpha;
-		public int illumType;
-		public string diffuseTexPath;
-		public string bumpTexPath;
-		public Texture2D diffuseTex;
-		public Texture2D bumpTex;
+		public string Name;
+		public Color Ambient;
+		public Color Diffuse;
+		public Color Specular;
+		public float Shininess;
+		public float Alpha;
+		public int IllumType;
+		public string DiffuseTexPath;
+		public string BumpTexPath;
+		public Texture2D DiffuseTex;
+		public Texture2D BumpTex;
 	}
 
 	private void SetMaterialData(string filePath)
@@ -291,7 +281,7 @@ public class OBJ : MonoBehaviour
 		Stream fileStream = new FileStream(filePath, FileMode.Open);
 		StreamReader streamReader = new StreamReader(fileStream);
 
-		materialData = new List<MaterialData>();
+		this._materialData = new List<MaterialData>();
 		MaterialData current = new MaterialData();
 		Regex regexWhitespaces = new Regex(@"\s+");
 
@@ -309,34 +299,34 @@ public class OBJ : MonoBehaviour
 			{
 				case NML:
 					current = new MaterialData();
-					current.name = p[1].Trim();
-					materialData.Add(current);
+					current.Name = p[1].Trim();
+					this._materialData.Add(current);
 					break;
 				case KA:
-					current.ambient = gc(p);
+					current.Ambient = gc(p);
 					break;
 				case KD:
-					current.diffuse = gc(p);
+					current.Diffuse = gc(p);
 					break;
 				case KS:
-					current.specular = gc(p);
+					current.Specular = gc(p);
 					break;
 				case NS:
-					current.shininess = cf(p[1]) / 1000;
+					current.Shininess = cf(p[1]) / 1000;
 					break;
 				case D:
 				case TR:
-					current.alpha = cf(p[1]);
+					current.Alpha = cf(p[1]);
 					break;
 				case MAP_KD:
-					current.diffuseTexPath = p[p.Length - 1].Trim();
+					current.DiffuseTexPath = p[p.Length - 1].Trim();
 					break;
 				case MAP_BUMP:
 				case BUMP:
-					BumpParameter(current, p);
+					this.BumpParameter(current, p);
 					break;
 				case ILLUM:
-					current.illumType = ci(p[1]);
+					current.IllumType = ci(p[1]);
 					break;
 				default:
 					Debug.Log("this line was not processed :" + l);
@@ -349,28 +339,28 @@ public class OBJ : MonoBehaviour
 	{
 		Material m;
 
-		if (md.illumType == 2)
+		if (md.IllumType == 2)
 		{
-			string shaderName = (md.bumpTex != null) ? "Bumped Specular" : "Specular";
+			string shaderName = (md.BumpTex != null) ? "Bumped Specular" : "Specular";
 			m = new Material(Shader.Find(shaderName));
-			m.SetColor("_SpecColor", md.specular);
-			m.SetFloat("_Shininess", md.shininess);
+			m.SetColor("_SpecColor", md.Specular);
+			m.SetFloat("_Shininess", md.Shininess);
 		}
 		else {
-			string shaderName = (md.bumpTex != null) ? "Bumped Diffuse" : "Diffuse";
+			string shaderName = (md.BumpTex != null) ? "Bumped Diffuse" : "Diffuse";
 			m = new Material(Shader.Find(shaderName));
 		}
 
-		if (md.diffuseTex != null)
+		if (md.DiffuseTex != null)
 		{
-			m.SetTexture("_MainTex", md.diffuseTex);
+			m.SetTexture("_MainTex", md.DiffuseTex);
 		}
 		else {
-			m.SetColor("_Color", md.diffuse);
+			m.SetColor("_Color", md.Diffuse);
 		}
-		if (md.bumpTex != null) m.SetTexture("_BumpMap", md.bumpTex);
+		if (md.BumpTex != null) m.SetTexture("_BumpMap", md.BumpTex);
 
-		m.name = md.name;
+		m.name = md.Name;
 
 		return m;
 	}
@@ -446,7 +436,7 @@ public class OBJ : MonoBehaviour
 			}
 			if (isOptionNotEnough)
 			{
-				Debug.Log("bump variable value not enough for option:" + optionName + " of material:" + m.name);
+				Debug.Log("bump variable value not enough for option:" + optionName + " of material:" + m.Name);
 				continue;
 			}
 			for (; i < def.valueNumMax && pos < p.Length; i++, pos++)
@@ -462,11 +452,11 @@ public class OBJ : MonoBehaviour
 				args.Add(p[pos]);
 			}
 			// TODO: some processing of options
-			Debug.Log("found option: " + optionName + " of material: " + m.name + " args: " + String.Concat(args.ToArray()));
+			Debug.Log("found option: " + optionName + " of material: " + m.Name + " args: " + String.Concat(args.ToArray()));
 		}
 		if (filename != null)
 		{
-			m.bumpTexPath = filename;
+			m.BumpTexPath = filename;
 		}
 	}
 
@@ -479,32 +469,32 @@ public class OBJ : MonoBehaviour
 	{
 		Dictionary<string, Material> materials = new Dictionary<string, Material>();
 
-		if (hasMaterials)
+		if (_hasMaterials)
 		{
-			foreach (MaterialData md in materialData)
+			foreach (MaterialData md in _materialData)
 			{
-				if (materials.ContainsKey(md.name))
+				if (materials.ContainsKey(md.Name))
 				{
-					Debug.LogWarning("duplicate material found: " + md.name + ". ignored repeated occurences");
+					Debug.LogWarning("duplicate material found: " + md.Name + ". ignored repeated occurences");
 					continue;
 				}
-				materials.Add(md.name, GetMaterial(md));
+				materials.Add(md.Name, GetMaterial(md));
 			}
 		}
 		else
 			materials.Add("default", new Material(Shader.Find("VertexLit")));
 
-		GameObject[] ms = new GameObject[buffer.numObjects];
+		GameObject[] ms = new GameObject[_buffer.NumObjects];
 
-		if (buffer.numObjects == 1)
+		if (_buffer.NumObjects == 1)
 		{
 			gameObject.AddComponent(typeof(MeshFilter));
 			gameObject.AddComponent(typeof(MeshRenderer));
 			ms[0] = gameObject;
 		}
-		else if (buffer.numObjects > 1)
+		else if (_buffer.NumObjects > 1)
 		{
-			for (int i = 0; i < buffer.numObjects; i++)
+			for (int i = 0; i < _buffer.NumObjects; i++)
 			{
 				GameObject go = new GameObject();
 				// go.transform.localScale = new Vector3(-1, 1, 1);
@@ -514,7 +504,7 @@ public class OBJ : MonoBehaviour
 				ms[i] = go;
 			}
 		}
-		buffer.PopulateMeshes(ms, materials);
+		_buffer.PopulateMeshes(ms, materials);
 
 		MeshFilter[] meshes = this.GetComponentsInChildren<MeshFilter>();
 		Vector3 sum = Vector3.zero;
