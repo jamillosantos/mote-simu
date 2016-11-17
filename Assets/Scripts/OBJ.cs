@@ -4,6 +4,14 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using System.IO;
+using System.ComponentModel;
+
+public enum RatioMeasurements
+{
+	Meter = 1,
+	Centimeter = 10,
+	Milimeter = 100
+}
 
 /// <summary>
 /// This code was adapted from https://github.com/hammmm/unity-obj-loader, check the URL for more information
@@ -43,6 +51,8 @@ public class OBJ : MonoBehaviour
 	private string basepath;
 	private string mtllib;
 	private GeometryBuffer _buffer;
+
+	public RatioMeasurements Ratio = RatioMeasurements.Milimeter;
 
 	void Start()
 	{
@@ -176,13 +186,13 @@ public class OBJ : MonoBehaviour
 					this._buffer.PushGroup(groupName);
 					break;
 				case V:
-					this._buffer.PushVertex(new Vector3(cf(p[1]) * -1, cf(p[2]), cf(p[3])));
+					this._buffer.PushVertex(new Vector3(cf(p[1]) * -1, cf(p[2]), cf(p[3])) / (float)this.Ratio);
 					break;
 				case VT:
-					this._buffer.PushUV(new Vector2(cf(p[1]), cf(p[2])));
+					this._buffer.PushUV(new Vector2(cf(p[1]), cf(p[2])) / (float)this.Ratio);
 					break;
 				case VN:
-					this._buffer.PushNormal(new Vector3(cf(p[1]), cf(p[2]), cf(p[3])));
+					this._buffer.PushNormal(new Vector3(cf(p[1]), cf(p[2]), cf(p[3])) / (float)this.Ratio);
 					break;
 				case F:
 					FaceIndices[] faces = new FaceIndices[p.Length - 1];

@@ -1,29 +1,135 @@
-﻿using Newtonsoft.Json.Linq;
+﻿using Model;
+using Newtonsoft.Json.Linq;
 using System;
 using System.Net;
 using System.Text;
 using UnityEngine;
+using System.Runtime.Serialization;
+using System.Collections.Generic;
 
 namespace Networking
 {
+	[Serializable]
+	public class UnknownPropertyException
+		: Exception
+	{
+		public string Property
+		{
+			get;
+			private set;
+		}
+
+		public UnknownPropertyException(string property)
+			: base("Unknown property '" + property + "'.")
+		{
+			this.Property = property;
+		}
+	}
+
+
+	[Serializable]
+	public class UnknownCommandException : Exception
+	{
+		public string Command
+		{
+			get;
+			private set;
+		}
+
+		public UnknownCommandException(string commandName)
+			: base("Unknown command: '" + commandName + "'.")
+		{
+			this.Command = commandName;
+		}
+	}
+
+	[Serializable]
+	public class RequirePropertyException
+		: Exception
+	{
+		public string Property
+		{
+			get;
+			private set;
+		}
+
+		public RequirePropertyException(string property)
+		{
+			this.Property = property;
+		}
+	}
+
+	public partial class Converter
+	{
+		public static Vector3 ToVector3(JObject source)
+		{
+			Vector3 result = Vector3.zero;
+			foreach (var p in source)
+			{
+				if (p.Key == "x")
+					result.x = (float)p.Value;
+				else if (p.Key == "y")
+					result.y = (float)p.Value;
+				else if (p.Key == "z")
+					result.z = (float)p.Value;
+				else
+					throw new UnknownPropertyException(p.Key);
+			}
+			return result;
+		}
+
+		public static Quaternion ToQuaternion(JObject source)
+		{
+			Quaternion result = Quaternion.identity;
+			bool fromEuler = false;
+			Vector3 eulerAngles = Vector3.zero;
+			foreach (var p in source)
+			{
+				if (p.Key == "qx")
+					result.x = (float)p.Value;
+				else if (p.Key == "qy")
+					result.y = (float)p.Value;
+				else if (p.Key == "qz")
+					result.z = (float)p.Value;
+				else if (p.Key == "qw")
+					result.w = (float)p.Value;
+				else if (p.Key == "x")
+				{
+					fromEuler = true;
+					eulerAngles.x = (float)p.Value;
+				}
+				else if (p.Key == "y")
+				{
+					fromEuler = true;
+					eulerAngles.y = (float)p.Value;
+				}
+				else if (p.Key == "z")
+				{
+					fromEuler = true;
+					eulerAngles.z = (float)p.Value;
+				}
+				else
+					throw new UnknownPropertyException(p.Key);
+			}
+			if (fromEuler)
+				result.eulerAngles = eulerAngles;
+			return result;
+		}
+	}
+
 	public class CommandsHandler
 		: IServerHandler
 	{
-
-		public UdpServer Server
+		public ModelManager Manager
 		{
-			get
-			{
-				return this._server;
-			}
-
-			set
-			{
-				this._server = value;
-			}
+			get;
+			private set;
 		}
 
-		private UdpServer _server;
+		public CommandsHandler(ModelManager manager)
+		{
+			this.Manager = manager;
+		}
 
 		public void Received(byte[] data, EndPoint endpoint)
 		{
@@ -31,8 +137,16 @@ namespace Networking
 			Debug.Log("RECEIVED: " + json);
 			try
 			{
-				JObject obj = JObject.Parse(json);
-				this.command(obj);
+				JToken obj = JObject.Parse(json);
+				if (obj is JObject)
+				{
+					this.command((JObject)obj);
+				}
+				else if (obj is JArray)
+				{
+					foreach (var o in (JArray)obj)
+						this.command((JObject)o);
+				}
 			}
 			catch (Exception e)
 			{
@@ -42,18 +156,67 @@ namespace Networking
 
 		private void command(JObject obj)
 		{
-			string commandName = (string)obj["name"];
-			if (commandName == "multi")
+			string commandName = (string)obj["command"];
+			Debug.Log("Command " + commandName + " arrived.");
+			if (commandName == "create")
 			{
-				JArray commands = (JArray)obj["params"];
-				foreach (var o in commands)
-				{
-					this.command((JObject)o);
-				}
+				this.create((JObject)obj["params"]);
 			}
-			else if (commandName == "create")
+			else if (commandName == "update")
 			{
-				// this.rotate((JObject)obj["params"]);
+				this.create((JObject)obj["params"]);
+			}
+			else
+			{
+				throw new UnknownCommandException(commandName);
+			}
+		}
+
+		private void create(JObject obj, Commands.Create parent = null)
+		{
+			Commands.Create command = new Commands.Create();
+			JArray children = null;
+			foreach (var p in obj)
+			{
+				if (p.Key == "name")
+					command.Name = (string)p.Value;
+				else if (p.Key == "source")
+				{
+					command.Source = (string)p.Value;
+				}
+				else if (p.Key == "position")
+				{
+					command.Position = Converter.ToVector3((JObject)p.Value);
+				}
+				else if (p.Key == "rotation")
+				{
+					command.Rotation = Converter.ToQuaternion((JObject)p.Value);
+				}
+				else if (p.Key == "children")
+				{
+					children = (JArray)p.Value;
+				}
+				else
+					throw new UnknownPropertyException(p.Key);
+			}
+
+			if (command.Name == "")
+				throw new RequirePropertyException("name");
+			else if (command.Source == "")
+				throw new RequirePropertyException("source");
+			else
+			{
+				if (children != null)
+				{
+					foreach (var t in children)
+					{
+						this.create((JObject)t, command);
+					}
+				}
+				if (parent != null)
+					parent.Children.Add(command);
+				else
+					this.Manager.Add(command);
 			}
 		}
 	}

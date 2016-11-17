@@ -9,12 +9,6 @@ namespace Networking
 {
 	public interface IServerHandler
 	{
-		UdpServer Server
-		{
-			get;
-			set;
-		}
-
 		void Received(byte[] data, EndPoint endpoint);
 	}
 
@@ -49,8 +43,6 @@ namespace Networking
 
 		private Socket _socket;
 
-		private byte[] _data;
-
 		private IPEndPoint _endpoint;
 
 		private IServerHandler _handler;
@@ -61,9 +53,7 @@ namespace Networking
 
 		public UdpServer(IServerHandler handler)
 		{
-			this._data = new byte[2048];
 			this._handler = handler;
-			this._handler.Server = this;
 			this._queue = new Queue<SendData>();
 			this._queueMutex = new Mutex();
 		}
@@ -83,9 +73,9 @@ namespace Networking
 			{
 				this._socket.Bind(ep);
 			}
-			catch (SocketException)
+			catch (SocketException e)
 			{
-				throw new Exception("Port busy.");
+				throw new Exception("Port busy.", e);
 			}
 			this._endpoint = ep;
 			this._running = true;
@@ -112,7 +102,7 @@ namespace Networking
 
 		protected virtual void SendHandler(IAsyncResult result)
 		{
-			int sendv = this._socket.EndSendTo(result);
+			this._socket.EndSendTo(result);
 			this.SendData();
 		}
 
