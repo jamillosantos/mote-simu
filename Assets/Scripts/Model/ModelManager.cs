@@ -12,6 +12,14 @@ namespace Model
 
 		private List<Networking.Commands.ICommand> _commands = new List<Networking.Commands.ICommand>();
 
+		public Dictionary<string, Manageable> Children
+		{
+			get
+			{
+				return this._children;
+			}
+		}
+
 		void Start()
 		{
 			this._server = new Networking.UdpServer(new Networking.CommandsHandler(this));

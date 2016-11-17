@@ -6,6 +6,7 @@ using System.Text;
 using UnityEngine;
 using System.Runtime.Serialization;
 using System.Collections.Generic;
+using System.Reflection;
 
 namespace Networking
 {
@@ -164,11 +165,29 @@ namespace Networking
 			}
 			else if (commandName == "update")
 			{
-				this.create((JObject)obj["params"]);
+				this.update((JObject)obj["params"]);
 			}
 			else
 			{
 				throw new UnknownCommandException(commandName);
+			}
+		}
+
+		private void update(JObject objects)
+		{
+			Manageable o;
+			FieldInfo info;
+			foreach (var obj in objects)
+			{
+				o = this.Manager.Children[obj.Key];
+				foreach (var property in (JObject)obj.Value)
+				{
+					info = o.GetType().GetField(property.Key);
+					if (info == null)
+						throw new UnknownPropertyException(property.Key);
+					Debug.Log(obj.Key + ": " + property.Key + " = " + property.Value);
+					info.SetValue(o, Convert.ChangeType(property.Value, info.FieldType));
+				}
 			}
 		}
 
