@@ -73,10 +73,12 @@
     <Compile Include="Assets\Scripts\GeometryBuffer.cs" />
     <Compile Include="Assets\Scripts\Initialize.cs" />
     <Compile Include="Assets\Scripts\Model\Horn.cs" />
+    <Compile Include="Assets\Scripts\Model\MX106.cs" />
     <Compile Include="Assets\Scripts\Model\Manageable.cs" />
     <Compile Include="Assets\Scripts\Model\ModelManager.cs" />
     <Compile Include="Assets\Scripts\Model\Motor.cs" />
     <Compile Include="Assets\Scripts\Model\MotorPlaceholder.cs" />
+    <Compile Include="Assets\Scripts\Model\Robotis.cs" />
     <Compile Include="Assets\Scripts\Networking\Commands\Command.cs" />
     <Compile Include="Assets\Scripts\Networking\Commands\Create.cs" />
     <Compile Include="Assets\Scripts\Networking\CommandsHandler.cs" />

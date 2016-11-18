@@ -23,7 +23,12 @@ namespace Model
 						break;
 					}
 					else
-						p = p.transform.parent.gameObject;
+					{
+						if (p.transform.parent == null)
+							break;
+						else
+							p = p.transform.parent.gameObject;
+					}
 				}
 			}
 			this.Manager.Register(this);

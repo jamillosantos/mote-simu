@@ -15,19 +15,27 @@ namespace Model
 	{
 		public float Angle;
 
-		private MotorPlaceholder _placeholder;
+		protected MotorPlaceholder _placeholder;
 
-		private Horn _horn;
+		protected Horn _horn;
 
 		public bool Inverted;
 
-		void Awake()
+		protected virtual void Awake()
 		{
 			this._placeholder = this.GetComponentInChildren<MotorPlaceholder>();
 			this._horn = this.GetComponentInChildren<Horn>();
 		}
 
 		void Update()
+		{ }
+
+		void FixedUpdate()
+		{
+			this.Apply();
+		}
+
+		protected virtual void Apply()
 		{
 			this._horn.transform.localRotation = Quaternion.Euler(new Vector3(0, 0, this.Angle * (this.Inverted ? -1 : 1)));
 		}
