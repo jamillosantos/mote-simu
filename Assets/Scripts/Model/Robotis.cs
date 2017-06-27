@@ -13,6 +13,7 @@ namespace Model
 
 		protected float _rpm;
 
+		/*
 		protected override void Apply()
 		{
 			float
@@ -44,5 +45,6 @@ namespace Model
 			}
 			this._horn.transform.localRotation = Quaternion.Euler(new Vector3(0, 0, (this._angle * (this.Inverted ? -1 : 1))));
 		}
+		*/
 	}
 }

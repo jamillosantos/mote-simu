@@ -151,7 +151,7 @@ namespace Networking
 			}
 			catch (Exception e)
 			{
-				Debug.LogException(e);
+				// Debug.LogException(e);
 			}
 		}
 
@@ -179,14 +179,22 @@ namespace Networking
 			FieldInfo info;
 			foreach (var obj in objects)
 			{
-				o = this.Manager.Children[obj.Key];
-				foreach (var property in (JObject)obj.Value)
+				try
 				{
-					info = o.GetType().GetField(property.Key);
-					if (info == null)
-						throw new UnknownPropertyException(property.Key);
-					Debug.Log(obj.Key + ": " + property.Key + " = " + property.Value);
-					info.SetValue(o, Convert.ChangeType(property.Value, info.FieldType));
+					o = this.Manager.Children[obj.Key];
+					foreach (var property in (JObject)obj.Value)
+					{
+						info = o.GetType().GetField(property.Key);
+						if (info == null)
+							throw new UnknownPropertyException(property.Key);
+						Debug.Log(obj.Key + ": " + property.Key + " = " + property.Value);
+						info.SetValue(o, Convert.ChangeType(property.Value, info.FieldType));
+					}
+				}
+				catch(KeyNotFoundException e)
+				{
+					Debug.Log ("Junta " + obj.Key + " não foi encontrado.");
+					Debug.LogError (e);
 				}
 			}
 		}

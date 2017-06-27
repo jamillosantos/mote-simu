@@ -1,4 +1,4 @@
-﻿using UnityEditor;
+﻿// using UnityEditor;
 using UnityEngine;
 
 namespace Model
@@ -42,7 +42,7 @@ namespace Model
 
 		void OnDrawGizmos()
 		{
-			Handles.ArrowCap(0, this.transform.position, this.transform.rotation, 0.2f);
+			// Handles.ArrowCap(0, this.transform.position, this.transform.rotation, 0.2f);
 		}
 	}
 }
